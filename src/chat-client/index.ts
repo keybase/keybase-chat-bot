@@ -78,6 +78,7 @@ export interface ChatDownloadOptions {
 export interface ListenOptions {
   hideExploding: boolean
   showLocal: boolean
+  ignoreSourceLocal?: boolean
 }
 
 export interface Advertisement {
@@ -733,17 +734,21 @@ class Chat extends ClientBase {
           return
         }
         const msgNotification: chat1.MsgNotification = messageObject
+        const showLocal: boolean = (options && options.showLocal) || false
+        const ignoreSourceLocal: boolean = (options && options.ignoreSourceLocal) || false
+        const isSourceLocal: boolean = msgNotification.source === 'local'
         if (msgNotification.msg) {
           if (
             // fire onMessage if it was from a different sender or at least a different device
             // from this sender. Bots can filter out their own messages from other devices.
-            (options && options.showLocal) ||
+            // With option ignoreSourceLocal, local source messages are ignored.
+            showLocal ||
             (this.username &&
               this.devicename &&
               (msgNotification.msg.sender.username !== this.username.toLowerCase() ||
                 msgNotification.msg.sender.deviceName !== this.devicename))
           ) {
-            onMessage(msgNotification.msg)
+            if (!ignoreSourceLocal || (ignoreSourceLocal && !isSourceLocal)) onMessage(msgNotification.msg)
           }
         }
       } catch (error) {
